@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.runtime.*
 import com.example.aulaverde.ui.BienvenidaScreen
 import com.example.aulaverde.ui.LoginScreen
+import com.example.aulaverde.ui.RegistroScreen
 import com.example.aulaverde.ui.theme.AulaVerdeTheme
 
 class MainActivity : ComponentActivity() {
@@ -28,13 +29,21 @@ class MainActivity : ComponentActivity() {
                                 pantallaActual = "login"
                             },
                             onRegistroClick = {
-                                // Lo implementaremos después
+                                pantallaActual = "registro"
                             }
                         )
                     }
 
                     "login" -> {
                         LoginScreen(
+                            onVolverClick = {
+                                pantallaActual = "bienvenida"
+                            }
+                        )
+                    }
+
+                    "registro" -> {
+                        RegistroScreen(
                             onVolverClick = {
                                 pantallaActual = "bienvenida"
                             }
