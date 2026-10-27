@@ -13,6 +13,7 @@ import com.example.aulaverde.ui.RegistroScreen
 import com.example.aulaverde.ui.theme.AulaVerdeTheme
 import com.example.aulaverde.viewmodel.AuthViewModel
 import com.example.aulaverde.ui.PerfilScreen
+import com.example.aulaverde.ui.EditarPerfilScreen
 
 class MainActivity : ComponentActivity() {
 
@@ -83,9 +84,43 @@ class MainActivity : ComponentActivity() {
                         if (profesor != null) {
                             PerfilScreen(
                                 profesor = profesor,
+                                onEditarPerfil = {
+                                    authViewModel.limpiarErrorEditarPerfil()
+                                    pantallaActual = "editarPerfil"
+                                },
                                 onCerrarSesion = {
                                     authViewModel.cerrarSesion()
                                     pantallaActual = "bienvenida"
+                                }
+                            )
+                        } else {
+                            LaunchedEffect(Unit) {
+                                pantallaActual = "bienvenida"
+                            }
+                        }
+                    }
+
+                    "editarPerfil" -> {
+                        val profesor = authViewModel.profesorAutenticado
+
+                        if (profesor != null) {
+                            EditarPerfilScreen(
+                                profesor = profesor,
+                                viewModel = authViewModel,
+                                onGuardarClick = { nombre, correo ->
+                                    authViewModel.actualizarPerfil(
+                                        nuevoNombre = nombre,
+                                        nuevoCorreo = correo,
+                                        onExito = {
+                                            pantallaActual = "perfil"
+                                        }
+                                    )
+                                },
+                                onVolverClick = {
+                                    if (!authViewModel.guardandoPerfil) {
+                                        authViewModel.limpiarErrorEditarPerfil()
+                                        pantallaActual = "perfil"
+                                    }
                                 }
                             )
                         } else {

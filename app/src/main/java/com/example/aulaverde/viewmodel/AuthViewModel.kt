@@ -60,6 +60,12 @@ class AuthViewModel : ViewModel() {
     var profesorAutenticado by mutableStateOf<Profesor?>(null)
         private set
 
+    var errorEditarPerfil by mutableStateOf<String?>(null)
+        private set
+
+    var guardandoPerfil by mutableStateOf(false)
+        private set
+
     private var repository: ProfesorRepository? = null
 
     fun configurarRepository(
@@ -237,5 +243,80 @@ class AuthViewModel : ViewModel() {
         correoLogin = ""
         contrasenaLogin = ""
         errorLogin = null
+    }
+    fun actualizarPerfil(
+        nuevoNombre: String,
+        nuevoCorreo: String,
+        onExito: () -> Unit
+    ) {
+        if (guardandoPerfil) return
+
+        errorEditarPerfil = null
+
+        val nombreLimpio = nuevoNombre.trim()
+        val correoLimpio = nuevoCorreo.trim().lowercase()
+
+        val errorNombre = AuthValidator.validarNombre(nombreLimpio)
+        val errorCorreo = AuthValidator.validarCorreo(correoLimpio)
+
+        if (errorNombre != null) {
+            errorEditarPerfil = errorNombre
+            return
+        }
+
+        if (errorCorreo != null) {
+            errorEditarPerfil = errorCorreo
+            return
+        }
+
+        val profesor = profesorAutenticado ?: run {
+            errorEditarPerfil = "No hay una sesión iniciada"
+            return
+        }
+
+        val profesorRepository = repository ?: run {
+            errorEditarPerfil = "No se pudo acceder a la base de datos"
+            return
+        }
+
+        guardandoPerfil = true
+
+        viewModelScope.launch {
+            try {
+                val correoOcupado = withContext(Dispatchers.IO) {
+                    profesorRepository.buscarPorCorreo(correoLimpio)
+                }
+
+                if (correoOcupado != null &&
+                    correoOcupado.id != profesor.id
+                ) {
+                    errorEditarPerfil = "Este correo ya está registrado"
+                    return@launch
+                }
+
+                val profesorActualizado = profesor.copy(
+                    nombre = nombreLimpio,
+                    correo = correoLimpio
+                )
+
+                withContext(Dispatchers.IO) {
+                    profesorRepository.actualizarProfesor(
+                        profesorActualizado
+                    )
+                }
+
+                profesorAutenticado = profesorActualizado
+                onExito()
+
+            } catch (e: Exception) {
+                errorEditarPerfil = "No se pudieron guardar los cambios"
+            } finally {
+                guardandoPerfil = false
+            }
+        }
+    }
+
+    fun limpiarErrorEditarPerfil() {
+        errorEditarPerfil = null
     }
 }
