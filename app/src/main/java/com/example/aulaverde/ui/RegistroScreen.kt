@@ -153,10 +153,9 @@ fun RegistroScreen(
 
         Button(
             onClick = {
-                if (viewModel.validarRegistro()) {
-                    // Después guardaremos el profesor en Room
-                }
+                viewModel.registrarProfesor()
             },
+            enabled = !viewModel.registrando,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(54.dp),
@@ -165,7 +164,18 @@ fun RegistroScreen(
             ),
             shape = RoundedCornerShape(12.dp)
         ) {
-            Text("Registrarse")
+            Text(
+                if (viewModel.registrando) "Registrando..."
+                else "Registrarse"
+            )
+        }
+        viewModel.mensajeRegistro?.let { mensaje ->
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = mensaje,
+                color = verde
+            )
         }
 
         Spacer(modifier = Modifier.height(12.dp))
