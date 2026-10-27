@@ -16,6 +16,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.aulaverde.validation.AuthValidator
 
 @Composable
 fun RegistroScreen(
@@ -25,6 +26,11 @@ fun RegistroScreen(
     var correo by remember { mutableStateOf("") }
     var contrasena by remember { mutableStateOf("") }
     var confirmarContrasena by remember { mutableStateOf("") }
+
+    var errorNombre by remember { mutableStateOf<String?>(null) }
+    var errorCorreo by remember { mutableStateOf<String?>(null) }
+    var errorContrasena by remember { mutableStateOf<String?>(null) }
+    var errorConfirmacion by remember { mutableStateOf<String?>(null) }
 
     val verde = Color(0xFF174C37)
     val fondo = Color(0xFFE8F1EA)
@@ -56,8 +62,17 @@ fun RegistroScreen(
 
         OutlinedTextField(
             value = nombre,
-            onValueChange = { nombre = it },
+            onValueChange = {
+                nombre = it
+                errorNombre = null
+            },
             label = { Text("Nombre completo") },
+            isError = errorNombre != null,
+            supportingText = {
+                if (errorNombre != null) {
+                    Text(errorNombre!!)
+                }
+            },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
@@ -72,8 +87,17 @@ fun RegistroScreen(
 
         OutlinedTextField(
             value = correo,
-            onValueChange = { correo = it },
+            onValueChange = {
+                correo = it
+                errorCorreo = null
+            },
             label = { Text("Correo electrónico") },
+            isError = errorCorreo != null,
+            supportingText = {
+                if (errorCorreo != null) {
+                    Text(errorCorreo!!)
+                }
+            },
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Email
             ),
@@ -91,8 +115,17 @@ fun RegistroScreen(
 
         OutlinedTextField(
             value = contrasena,
-            onValueChange = { contrasena = it },
+            onValueChange = {
+                contrasena = it
+                errorContrasena = null
+            },
             label = { Text("Contraseña") },
+            isError = errorContrasena != null,
+            supportingText = {
+                if (errorContrasena != null) {
+                    Text(errorContrasena!!)
+                }
+            },
             visualTransformation = PasswordVisualTransformation(),
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
@@ -108,8 +141,17 @@ fun RegistroScreen(
 
         OutlinedTextField(
             value = confirmarContrasena,
-            onValueChange = { confirmarContrasena = it },
+            onValueChange = {
+                confirmarContrasena = it
+                errorConfirmacion = null
+            },
             label = { Text("Confirmar contraseña") },
+            isError = errorConfirmacion != null,
+            supportingText = {
+                if (errorConfirmacion != null) {
+                    Text(errorConfirmacion!!)
+                }
+            },
             visualTransformation = PasswordVisualTransformation(),
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
@@ -125,7 +167,23 @@ fun RegistroScreen(
 
         Button(
             onClick = {
-                // Agregaremos las validaciones después
+                errorNombre = AuthValidator.validarNombre(nombre)
+                errorCorreo = AuthValidator.validarCorreo(correo)
+                errorContrasena = AuthValidator.validarContrasena(contrasena)
+                errorConfirmacion = AuthValidator.validarConfirmacion(
+                    contrasena,
+                    confirmarContrasena
+                )
+
+                val formularioValido =
+                    errorNombre == null &&
+                            errorCorreo == null &&
+                            errorContrasena == null &&
+                            errorConfirmacion == null
+
+                if (formularioValido) {
+                    // Más adelante guardaremos el profesor en Room
+                }
             },
             modifier = Modifier
                 .fillMaxWidth()
