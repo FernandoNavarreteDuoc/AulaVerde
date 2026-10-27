@@ -16,8 +16,7 @@ import com.example.aulaverde.data.Profesor
 @Composable
 fun PerfilScreen(
     profesor: Profesor,
-    onEditarPerfil: () -> Unit,
-    onCerrarSesion: () -> Unit
+    onEditarPerfil: () -> Unit
 ) {
     val verde = Color(0xFF174C37)
     val fondo = Color(0xFFE8F1EA)
@@ -68,19 +67,5 @@ fun PerfilScreen(
             Text("Editar perfil")
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            onClick = onCerrarSesion,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(54.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = verde
-            ),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Text("Cerrar sesión")
-        }
     }
 }

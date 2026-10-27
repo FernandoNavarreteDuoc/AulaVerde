@@ -3,17 +3,20 @@ package com.example.aulaverde
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.aulaverde.data.DatabaseProvider
 import com.example.aulaverde.repository.ProfesorRepository
-import com.example.aulaverde.ui.BienvenidaScreen
-import com.example.aulaverde.ui.LoginScreen
-import com.example.aulaverde.ui.RegistroScreen
+import com.example.aulaverde.ui.*
 import com.example.aulaverde.ui.theme.AulaVerdeTheme
 import com.example.aulaverde.viewmodel.AuthViewModel
-import com.example.aulaverde.ui.PerfilScreen
-import com.example.aulaverde.ui.EditarPerfilScreen
 
 class MainActivity : ComponentActivity() {
 
@@ -30,7 +33,6 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             AulaVerdeTheme {
-
                 val authViewModel: AuthViewModel = viewModel()
 
                 LaunchedEffect(authViewModel) {
@@ -43,88 +45,171 @@ class MainActivity : ComponentActivity() {
                     mutableStateOf("bienvenida")
                 }
 
-                when (pantallaActual) {
+                val profesor = authViewModel.profesorAutenticado
 
-                    "bienvenida" -> BienvenidaScreen(
-                        onLoginClick = {
-                            pantallaActual = "login"
+                val cerrarSesion = {
+                    authViewModel.cerrarSesion()
+                    pantallaActual = "bienvenida"
+                }
+
+                val pantallasConBarras = listOf(
+                    "home",
+                    "documentos",
+                    "perfil",
+                    "editarPerfil"
+                )
+
+                if (
+                    profesor != null &&
+                    pantallaActual in pantallasConBarras
+                ) {
+                    Scaffold(
+                        topBar = {
+                            AulaVerdeTopBar(
+                                onPerfilClick = {
+                                    if (!authViewModel.guardandoPerfil) {
+                                        pantallaActual = "perfil"
+                                    }
+                                },
+                                onCerrarSesion = {
+                                    if (!authViewModel.guardandoPerfil) {
+                                        cerrarSesion()
+                                    }
+                                }
+                            )
                         },
-                        onRegistroClick = {
-                            pantallaActual = "registro"
+                        bottomBar = {
+                            AulaVerdeBottomBar(
+                                pantallaActual = pantallaActual,
+                                onInicioClick = {
+                                    if (!authViewModel.guardandoPerfil) {
+                                        pantallaActual = "home"
+                                    }
+                                },
+                                onDocumentosClick = {
+                                    if (!authViewModel.guardandoPerfil) {
+                                        pantallaActual = "documentos"
+                                    }
+                                },
+                                onPerfilClick = {
+                                    if (!authViewModel.guardandoPerfil) {
+                                        pantallaActual = "perfil"
+                                    }
+                                }
+                            )
                         }
-                    )
+                    ) { paddingValues ->
 
-                    "login" -> {
-                        val profesor = authViewModel.profesorAutenticado
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(paddingValues)
+                        ) {
+                            when (pantallaActual) {
 
-                        if (profesor != null) {
-                            LaunchedEffect(profesor.id) {
-                                pantallaActual = "perfil"
+                                "home" -> HomeScreen(
+                                    nombreProfesor = profesor.nombre,
+                                    onPerfilClick = {
+                                        pantallaActual = "perfil"
+                                    },
+                                    onDocumentosClick = {
+                                        pantallaActual = "documentos"
+                                    }
+                                )
+
+                                "documentos" -> {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(
+                                                Color(0xFFE8F1EA)
+                                            )
+                                            .padding(24.dp),
+                                        horizontalAlignment =
+                                            Alignment.CenterHorizontally,
+                                        verticalArrangement =
+                                            Arrangement.Center
+                                    ) {
+                                        Text("Gestor de documentos")
+
+                                        Spacer(
+                                            modifier =
+                                                Modifier.height(16.dp)
+                                        )
+
+                                        Text(
+                                            "Esta herramienta estará disponible próximamente"
+                                        )
+                                    }
+                                }
+
+                                "perfil" -> PerfilScreen(
+                                    profesor = profesor,
+                                    onEditarPerfil = {
+                                        authViewModel.limpiarErrorEditarPerfil()
+                                        pantallaActual = "editarPerfil"
+                                    }
+                                )
+
+                                "editarPerfil" -> EditarPerfilScreen(
+                                    profesor = profesor,
+                                    viewModel = authViewModel,
+                                    onGuardarClick = { nombre, correo ->
+                                        authViewModel.actualizarPerfil(
+                                            nuevoNombre = nombre,
+                                            nuevoCorreo = correo,
+                                            onExito = {
+                                                pantallaActual = "perfil"
+                                            }
+                                        )
+                                    },
+                                    onVolverClick = {
+                                        if (!authViewModel.guardandoPerfil) {
+                                            authViewModel
+                                                .limpiarErrorEditarPerfil()
+                                            pantallaActual = "perfil"
+                                        }
+                                    }
+                                )
                             }
                         }
+                    }
+                } else {
+                    when (pantallaActual) {
 
-                        LoginScreen(
+                        "bienvenida" -> BienvenidaScreen(
+                            onLoginClick = {
+                                pantallaActual = "login"
+                            },
+                            onRegistroClick = {
+                                pantallaActual = "registro"
+                            }
+                        )
+
+                        "login" -> {
+                            if (profesor != null) {
+                                LaunchedEffect(profesor.id) {
+                                    pantallaActual = "home"
+                                }
+                            }
+
+                            LoginScreen(
+                                onVolverClick = {
+                                    pantallaActual = "bienvenida"
+                                },
+                                viewModel = authViewModel
+                            )
+                        }
+
+                        "registro" -> RegistroScreen(
                             onVolverClick = {
                                 pantallaActual = "bienvenida"
                             },
                             viewModel = authViewModel
                         )
-                    }
 
-                    "registro" -> RegistroScreen(
-                        onVolverClick = {
-                            pantallaActual = "bienvenida"
-                        },
-                        viewModel = authViewModel
-                    )
-
-                    "perfil" -> {
-                        val profesor = authViewModel.profesorAutenticado
-
-                        if (profesor != null) {
-                            PerfilScreen(
-                                profesor = profesor,
-                                onEditarPerfil = {
-                                    authViewModel.limpiarErrorEditarPerfil()
-                                    pantallaActual = "editarPerfil"
-                                },
-                                onCerrarSesion = {
-                                    authViewModel.cerrarSesion()
-                                    pantallaActual = "bienvenida"
-                                }
-                            )
-                        } else {
-                            LaunchedEffect(Unit) {
-                                pantallaActual = "bienvenida"
-                            }
-                        }
-                    }
-
-                    "editarPerfil" -> {
-                        val profesor = authViewModel.profesorAutenticado
-
-                        if (profesor != null) {
-                            EditarPerfilScreen(
-                                profesor = profesor,
-                                viewModel = authViewModel,
-                                onGuardarClick = { nombre, correo ->
-                                    authViewModel.actualizarPerfil(
-                                        nuevoNombre = nombre,
-                                        nuevoCorreo = correo,
-                                        onExito = {
-                                            pantallaActual = "perfil"
-                                        }
-                                    )
-                                },
-                                onVolverClick = {
-                                    if (!authViewModel.guardandoPerfil) {
-                                        authViewModel.limpiarErrorEditarPerfil()
-                                        pantallaActual = "perfil"
-                                    }
-                                }
-                            )
-                        } else {
-                            LaunchedEffect(Unit) {
+                        else -> {
+                            LaunchedEffect(pantallaActual) {
                                 pantallaActual = "bienvenida"
                             }
                         }
