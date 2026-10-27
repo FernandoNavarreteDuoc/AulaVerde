@@ -1,0 +1,322 @@
+package com.example.aulaverde.viewmodel
+
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.aulaverde.data.Profesor
+import com.example.aulaverde.repository.ProfesorRepository
+import com.example.aulaverde.security.PasswordUtils
+import com.example.aulaverde.validation.AuthValidator
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+class AuthViewModel : ViewModel() {
+
+    var nombre by mutableStateOf("")
+        private set
+
+    var correo by mutableStateOf("")
+        private set
+
+    var contrasena by mutableStateOf("")
+        private set
+
+    var confirmarContrasena by mutableStateOf("")
+        private set
+
+    var errorNombre by mutableStateOf<String?>(null)
+        private set
+
+    var errorCorreo by mutableStateOf<String?>(null)
+        private set
+
+    var errorContrasena by mutableStateOf<String?>(null)
+        private set
+
+    var errorConfirmacion by mutableStateOf<String?>(null)
+        private set
+
+    var mensajeRegistro by mutableStateOf<String?>(null)
+        private set
+
+    var registrando by mutableStateOf(false)
+        private set
+
+    var correoLogin by mutableStateOf("")
+        private set
+
+    var contrasenaLogin by mutableStateOf("")
+        private set
+
+    var errorLogin by mutableStateOf<String?>(null)
+        private set
+
+    var iniciandoSesion by mutableStateOf(false)
+        private set
+
+    var profesorAutenticado by mutableStateOf<Profesor?>(null)
+        private set
+
+    var errorEditarPerfil by mutableStateOf<String?>(null)
+        private set
+
+    var guardandoPerfil by mutableStateOf(false)
+        private set
+
+    private var repository: ProfesorRepository? = null
+
+    fun configurarRepository(
+        profesorRepository: ProfesorRepository
+    ) {
+        repository = profesorRepository
+    }
+
+    fun cambiarNombre(valor: String) {
+        nombre = valor
+        errorNombre = null
+        mensajeRegistro = null
+    }
+
+    fun cambiarCorreo(valor: String) {
+        correo = valor
+        errorCorreo = null
+        mensajeRegistro = null
+    }
+
+    fun cambiarContrasena(valor: String) {
+        contrasena = valor
+        errorContrasena = null
+        mensajeRegistro = null
+    }
+
+    fun cambiarConfirmacion(valor: String) {
+        confirmarContrasena = valor
+        errorConfirmacion = null
+        mensajeRegistro = null
+    }
+
+    fun validarRegistro(): Boolean {
+        errorNombre = AuthValidator.validarNombre(nombre)
+        errorCorreo = AuthValidator.validarCorreo(correo)
+        errorContrasena = AuthValidator.validarContrasena(contrasena)
+        errorConfirmacion = AuthValidator.validarConfirmacion(
+            contrasena,
+            confirmarContrasena
+        )
+
+        return errorNombre == null &&
+                errorCorreo == null &&
+                errorContrasena == null &&
+                errorConfirmacion == null
+    }
+
+    fun registrarProfesor() {
+        if (registrando || !validarRegistro()) return
+
+        val profesorRepository = repository ?: run {
+            mensajeRegistro = "No se pudo acceder a la base de datos"
+            return
+        }
+
+        val nombreRegistro = nombre.trim()
+        val correoRegistro = correo.trim().lowercase()
+        val contrasenaRegistro = contrasena
+
+        registrando = true
+        mensajeRegistro = null
+
+        viewModelScope.launch {
+            try {
+                val resultado = withContext(Dispatchers.IO) {
+                    val existente = profesorRepository
+                        .buscarPorCorreo(correoRegistro)
+
+                    if (existente != null) {
+                        false
+                    } else {
+                        val hash = PasswordUtils.generarHash(
+                            contrasenaRegistro
+                        )
+
+                        val profesor = Profesor(
+                            nombre = nombreRegistro,
+                            correo = correoRegistro,
+                            passwordHash = hash
+                        )
+
+                        profesorRepository.registrarProfesor(profesor)
+                        true
+                    }
+                }
+
+                if (resultado) {
+                    mensajeRegistro = "Profesor registrado correctamente"
+                    limpiarFormulario()
+                } else {
+                    errorCorreo = "Este correo ya está registrado"
+                }
+
+            } catch (e: Exception) {
+                mensajeRegistro = "No se pudo completar el registro"
+            } finally {
+                registrando = false
+            }
+        }
+    }
+    fun cambiarCorreoLogin(valor: String) {
+        correoLogin = valor
+        errorLogin = null
+    }
+
+    fun cambiarContrasenaLogin(valor: String) {
+        contrasenaLogin = valor
+        errorLogin = null
+    }
+
+    fun iniciarSesion() {
+        if (iniciandoSesion) return
+
+        val correoIngresado = correoLogin.trim().lowercase()
+        val contrasenaIngresada = contrasenaLogin
+
+        if (correoIngresado.isBlank() ||
+            contrasenaIngresada.isBlank()
+        ) {
+            errorLogin = "Debes completar todos los campos"
+            return
+        }
+
+        val profesorRepository = repository ?: run {
+            errorLogin = "No se pudo acceder a la base de datos"
+            return
+        }
+
+        iniciandoSesion = true
+        errorLogin = null
+        profesorAutenticado = null
+
+        viewModelScope.launch {
+            try {
+                val profesor = withContext(Dispatchers.IO) {
+                    val encontrado = profesorRepository
+                        .buscarPorCorreo(correoIngresado)
+
+                    if (encontrado != null &&
+                        PasswordUtils.verificarContrasena(
+                            contrasenaIngresada,
+                            encontrado.passwordHash
+                        )
+                    ) {
+                        encontrado
+                    } else {
+                        null
+                    }
+                }
+
+                if (profesor != null) {
+                    profesorAutenticado = profesor
+                    contrasenaLogin = ""
+                } else {
+                    errorLogin = "Correo o contraseña incorrectos"
+                }
+
+            } catch (e: Exception) {
+                errorLogin = "No se pudo iniciar sesión"
+            } finally {
+                iniciandoSesion = false
+            }
+        }
+    }
+
+    private fun limpiarFormulario() {
+        nombre = ""
+        correo = ""
+        contrasena = ""
+        confirmarContrasena = ""
+    }
+
+    fun cerrarSesion() {
+        profesorAutenticado = null
+        correoLogin = ""
+        contrasenaLogin = ""
+        errorLogin = null
+    }
+    fun actualizarPerfil(
+        nuevoNombre: String,
+        nuevoCorreo: String,
+        onExito: () -> Unit
+    ) {
+        if (guardandoPerfil) return
+
+        errorEditarPerfil = null
+
+        val nombreLimpio = nuevoNombre.trim()
+        val correoLimpio = nuevoCorreo.trim().lowercase()
+
+        val errorNombre = AuthValidator.validarNombre(nombreLimpio)
+        val errorCorreo = AuthValidator.validarCorreo(correoLimpio)
+
+        if (errorNombre != null) {
+            errorEditarPerfil = errorNombre
+            return
+        }
+
+        if (errorCorreo != null) {
+            errorEditarPerfil = errorCorreo
+            return
+        }
+
+        val profesor = profesorAutenticado ?: run {
+            errorEditarPerfil = "No hay una sesión iniciada"
+            return
+        }
+
+        val profesorRepository = repository ?: run {
+            errorEditarPerfil = "No se pudo acceder a la base de datos"
+            return
+        }
+
+        guardandoPerfil = true
+
+        viewModelScope.launch {
+            try {
+                val correoOcupado = withContext(Dispatchers.IO) {
+                    profesorRepository.buscarPorCorreo(correoLimpio)
+                }
+
+                if (correoOcupado != null &&
+                    correoOcupado.id != profesor.id
+                ) {
+                    errorEditarPerfil = "Este correo ya está registrado"
+                    return@launch
+                }
+
+                val profesorActualizado = profesor.copy(
+                    nombre = nombreLimpio,
+                    correo = correoLimpio
+                )
+
+                withContext(Dispatchers.IO) {
+                    profesorRepository.actualizarProfesor(
+                        profesorActualizado
+                    )
+                }
+
+                profesorAutenticado = profesorActualizado
+                onExito()
+
+            } catch (e: Exception) {
+                errorEditarPerfil = "No se pudieron guardar los cambios"
+            } finally {
+                guardandoPerfil = false
+            }
+        }
+    }
+
+    fun limpiarErrorEditarPerfil() {
+        errorEditarPerfil = null
+    }
+}
