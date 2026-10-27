@@ -4,10 +4,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.*
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.aulaverde.ui.BienvenidaScreen
 import com.example.aulaverde.ui.LoginScreen
 import com.example.aulaverde.ui.RegistroScreen
 import com.example.aulaverde.ui.theme.AulaVerdeTheme
+import com.example.aulaverde.viewmodel.AuthViewModel
 
 class MainActivity : ComponentActivity() {
 
@@ -16,6 +18,8 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             AulaVerdeTheme {
+
+                val authViewModel: AuthViewModel = viewModel()
 
                 var pantallaActual by remember {
                     mutableStateOf("bienvenida")
@@ -46,7 +50,8 @@ class MainActivity : ComponentActivity() {
                         RegistroScreen(
                             onVolverClick = {
                                 pantallaActual = "bienvenida"
-                            }
+                            },
+                            viewModel = authViewModel
                         )
                     }
                 }

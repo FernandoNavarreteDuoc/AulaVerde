@@ -17,21 +17,13 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.aulaverde.validation.AuthValidator
+import com.example.aulaverde.viewmodel.AuthViewModel
 
 @Composable
 fun RegistroScreen(
-    onVolverClick: () -> Unit
+    onVolverClick: () -> Unit,
+    viewModel: AuthViewModel
 ) {
-    var nombre by remember { mutableStateOf("") }
-    var correo by remember { mutableStateOf("") }
-    var contrasena by remember { mutableStateOf("") }
-    var confirmarContrasena by remember { mutableStateOf("") }
-
-    var errorNombre by remember { mutableStateOf<String?>(null) }
-    var errorCorreo by remember { mutableStateOf<String?>(null) }
-    var errorContrasena by remember { mutableStateOf<String?>(null) }
-    var errorConfirmacion by remember { mutableStateOf<String?>(null) }
-
     val verde = Color(0xFF174C37)
     val fondo = Color(0xFFE8F1EA)
 
@@ -61,16 +53,13 @@ fun RegistroScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
         OutlinedTextField(
-            value = nombre,
-            onValueChange = {
-                nombre = it
-                errorNombre = null
-            },
+            value = viewModel.nombre,
+            onValueChange = viewModel::cambiarNombre,
             label = { Text("Nombre completo") },
-            isError = errorNombre != null,
+            isError = viewModel.errorNombre != null,
             supportingText = {
-                if (errorNombre != null) {
-                    Text(errorNombre!!)
+                viewModel.errorNombre?.let {
+                    Text(it)
                 }
             },
             singleLine = true,
@@ -86,16 +75,13 @@ fun RegistroScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
-            value = correo,
-            onValueChange = {
-                correo = it
-                errorCorreo = null
-            },
+            value = viewModel.correo,
+            onValueChange = viewModel::cambiarCorreo,
             label = { Text("Correo electrónico") },
-            isError = errorCorreo != null,
+            isError = viewModel.errorCorreo != null,
             supportingText = {
-                if (errorCorreo != null) {
-                    Text(errorCorreo!!)
+                viewModel.errorCorreo?.let {
+                    Text(it)
                 }
             },
             keyboardOptions = KeyboardOptions(
@@ -114,19 +100,19 @@ fun RegistroScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
-            value = contrasena,
-            onValueChange = {
-                contrasena = it
-                errorContrasena = null
-            },
+            value = viewModel.contrasena,
+            onValueChange = viewModel::cambiarContrasena,
             label = { Text("Contraseña") },
-            isError = errorContrasena != null,
+            isError = viewModel.errorContrasena != null,
             supportingText = {
-                if (errorContrasena != null) {
-                    Text(errorContrasena!!)
+                viewModel.errorContrasena?.let {
+                    Text(it)
                 }
             },
             visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Password
+            ),
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
@@ -140,19 +126,19 @@ fun RegistroScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
-            value = confirmarContrasena,
-            onValueChange = {
-                confirmarContrasena = it
-                errorConfirmacion = null
-            },
+            value = viewModel.confirmarContrasena,
+            onValueChange = viewModel::cambiarConfirmacion,
             label = { Text("Confirmar contraseña") },
-            isError = errorConfirmacion != null,
+            isError = viewModel.errorConfirmacion != null,
             supportingText = {
-                if (errorConfirmacion != null) {
-                    Text(errorConfirmacion!!)
+                viewModel.errorConfirmacion?.let {
+                    Text(it)
                 }
             },
             visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Password
+            ),
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
@@ -167,22 +153,8 @@ fun RegistroScreen(
 
         Button(
             onClick = {
-                errorNombre = AuthValidator.validarNombre(nombre)
-                errorCorreo = AuthValidator.validarCorreo(correo)
-                errorContrasena = AuthValidator.validarContrasena(contrasena)
-                errorConfirmacion = AuthValidator.validarConfirmacion(
-                    contrasena,
-                    confirmarContrasena
-                )
-
-                val formularioValido =
-                    errorNombre == null &&
-                            errorCorreo == null &&
-                            errorContrasena == null &&
-                            errorConfirmacion == null
-
-                if (formularioValido) {
-                    // Más adelante guardaremos el profesor en Room
+                if (viewModel.validarRegistro()) {
+                    // Después guardaremos el profesor en Room
                 }
             },
             modifier = Modifier
