@@ -154,11 +154,12 @@ class MainActivity : ComponentActivity() {
                                 "editarPerfil" -> EditarPerfilScreen(
                                     profesor = profesor,
                                     viewModel = authViewModel,
-                                    onGuardarClick = { nombre, correo ->
+                                    onGuardarClick = { nombre, correo, onGuardado ->
                                         authViewModel.actualizarPerfil(
                                             nuevoNombre = nombre,
                                             nuevoCorreo = correo,
                                             onExito = {
+                                                onGuardado()
                                                 pantallaActual = "perfil"
                                             }
                                         )

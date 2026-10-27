@@ -15,12 +15,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.aulaverde.data.Profesor
 import com.example.aulaverde.viewmodel.AuthViewModel
+import androidx.compose.ui.platform.LocalView
+import android.view.HapticFeedbackConstants
 
 @Composable
 fun EditarPerfilScreen(
     profesor: Profesor,
     viewModel: AuthViewModel,
-    onGuardarClick: (String, String) -> Unit,
+    onGuardarClick: (String, String, () -> Unit) -> Unit,
     onVolverClick: () -> Unit
 ) {
     var nombre by remember(profesor.id) {
@@ -31,6 +33,7 @@ fun EditarPerfilScreen(
         mutableStateOf(profesor.correo)
     }
 
+    val view = LocalView.current
     val verde = Color(0xFF174C37)
     val fondo = Color(0xFFE8F1EA)
 
@@ -99,7 +102,11 @@ fun EditarPerfilScreen(
 
         Button(
             onClick = {
-                onGuardarClick(nombre, correo)
+                onGuardarClick(nombre, correo) {
+                    view.performHapticFeedback(
+                        HapticFeedbackConstants.VIRTUAL_KEY
+                    )
+                }
             },
             enabled = !viewModel.guardandoPerfil,
             modifier = Modifier

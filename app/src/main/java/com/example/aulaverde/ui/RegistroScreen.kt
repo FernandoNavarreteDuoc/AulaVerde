@@ -18,12 +18,45 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.aulaverde.validation.AuthValidator
 import com.example.aulaverde.viewmodel.AuthViewModel
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import com.example.aulaverde.notifications.NotificacionHelper
 
 @Composable
 fun RegistroScreen(
     onVolverClick: () -> Unit,
     viewModel: AuthViewModel
 ) {
+
+    val context = LocalContext.current
+
+    val permisoNotificaciones = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { permitido ->
+        if (permitido) {
+            NotificacionHelper.mostrarBienvenida(context)
+        }
+    }
+
+    LaunchedEffect(viewModel.mensajeRegistro) {
+        if (
+            viewModel.mensajeRegistro ==
+            "Profesor registrado correctamente"
+        ) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                permisoNotificaciones.launch(
+                    Manifest.permission.POST_NOTIFICATIONS
+                )
+            } else {
+                NotificacionHelper.mostrarBienvenida(context)
+            }
+        }
+    }
+
     val verde = Color(0xFF174C37)
     val fondo = Color(0xFFE8F1EA)
 
