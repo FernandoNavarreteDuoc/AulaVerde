@@ -45,6 +45,21 @@ class AuthViewModel : ViewModel() {
     var registrando by mutableStateOf(false)
         private set
 
+    var correoLogin by mutableStateOf("")
+        private set
+
+    var contrasenaLogin by mutableStateOf("")
+        private set
+
+    var errorLogin by mutableStateOf<String?>(null)
+        private set
+
+    var iniciandoSesion by mutableStateOf(false)
+        private set
+
+    var profesorAutenticado by mutableStateOf<Profesor?>(null)
+        private set
+
     private var repository: ProfesorRepository? = null
 
     fun configurarRepository(
@@ -145,11 +160,82 @@ class AuthViewModel : ViewModel() {
             }
         }
     }
+    fun cambiarCorreoLogin(valor: String) {
+        correoLogin = valor
+        errorLogin = null
+    }
+
+    fun cambiarContrasenaLogin(valor: String) {
+        contrasenaLogin = valor
+        errorLogin = null
+    }
+
+    fun iniciarSesion() {
+        if (iniciandoSesion) return
+
+        val correoIngresado = correoLogin.trim().lowercase()
+        val contrasenaIngresada = contrasenaLogin
+
+        if (correoIngresado.isBlank() ||
+            contrasenaIngresada.isBlank()
+        ) {
+            errorLogin = "Debes completar todos los campos"
+            return
+        }
+
+        val profesorRepository = repository ?: run {
+            errorLogin = "No se pudo acceder a la base de datos"
+            return
+        }
+
+        iniciandoSesion = true
+        errorLogin = null
+        profesorAutenticado = null
+
+        viewModelScope.launch {
+            try {
+                val profesor = withContext(Dispatchers.IO) {
+                    val encontrado = profesorRepository
+                        .buscarPorCorreo(correoIngresado)
+
+                    if (encontrado != null &&
+                        PasswordUtils.verificarContrasena(
+                            contrasenaIngresada,
+                            encontrado.passwordHash
+                        )
+                    ) {
+                        encontrado
+                    } else {
+                        null
+                    }
+                }
+
+                if (profesor != null) {
+                    profesorAutenticado = profesor
+                    contrasenaLogin = ""
+                } else {
+                    errorLogin = "Correo o contraseña incorrectos"
+                }
+
+            } catch (e: Exception) {
+                errorLogin = "No se pudo iniciar sesión"
+            } finally {
+                iniciandoSesion = false
+            }
+        }
+    }
 
     private fun limpiarFormulario() {
         nombre = ""
         correo = ""
         contrasena = ""
         confirmarContrasena = ""
+    }
+
+    fun cerrarSesion() {
+        profesorAutenticado = null
+        correoLogin = ""
+        contrasenaLogin = ""
+        errorLogin = null
     }
 }

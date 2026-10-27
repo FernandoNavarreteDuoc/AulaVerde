@@ -12,6 +12,7 @@ import com.example.aulaverde.ui.LoginScreen
 import com.example.aulaverde.ui.RegistroScreen
 import com.example.aulaverde.ui.theme.AulaVerdeTheme
 import com.example.aulaverde.viewmodel.AuthViewModel
+import com.example.aulaverde.ui.PerfilScreen
 
 class MainActivity : ComponentActivity() {
 
@@ -52,11 +53,22 @@ class MainActivity : ComponentActivity() {
                         }
                     )
 
-                    "login" -> LoginScreen(
-                        onVolverClick = {
-                            pantallaActual = "bienvenida"
+                    "login" -> {
+                        val profesor = authViewModel.profesorAutenticado
+
+                        if (profesor != null) {
+                            LaunchedEffect(profesor.id) {
+                                pantallaActual = "perfil"
+                            }
                         }
-                    )
+
+                        LoginScreen(
+                            onVolverClick = {
+                                pantallaActual = "bienvenida"
+                            },
+                            viewModel = authViewModel
+                        )
+                    }
 
                     "registro" -> RegistroScreen(
                         onVolverClick = {
@@ -64,6 +76,24 @@ class MainActivity : ComponentActivity() {
                         },
                         viewModel = authViewModel
                     )
+
+                    "perfil" -> {
+                        val profesor = authViewModel.profesorAutenticado
+
+                        if (profesor != null) {
+                            PerfilScreen(
+                                profesor = profesor,
+                                onCerrarSesion = {
+                                    authViewModel.cerrarSesion()
+                                    pantallaActual = "bienvenida"
+                                }
+                            )
+                        } else {
+                            LaunchedEffect(Unit) {
+                                pantallaActual = "bienvenida"
+                            }
+                        }
+                    }
                 }
             }
         }

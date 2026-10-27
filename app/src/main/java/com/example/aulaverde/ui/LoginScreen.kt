@@ -15,13 +15,14 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.aulaverde.viewmodel.AuthViewModel
 
 @Composable
 fun LoginScreen(
-    onVolverClick: () -> Unit
+    onVolverClick: () -> Unit,
+    viewModel: AuthViewModel
 ) {
-    var correo by remember { mutableStateOf("") }
-    var contrasena by remember { mutableStateOf("") }
+
     var mostrarContrasena by remember { mutableStateOf(false) }
 
     val verde = Color(0xFF174C37)
@@ -53,8 +54,8 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(48.dp))
 
         OutlinedTextField(
-            value = correo,
-            onValueChange = { correo = it },
+            value = viewModel.correoLogin,
+            onValueChange = { viewModel.cambiarCorreoLogin(it) },
             label = { Text("Correo electrónico") },
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Email
@@ -73,8 +74,8 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
-            value = contrasena,
-            onValueChange = { contrasena = it },
+            value = viewModel.contrasenaLogin,
+            onValueChange = { viewModel.cambiarContrasenaLogin(it) },
             label = { Text("Contraseña") },
             visualTransformation = if (mostrarContrasena) {
                 VisualTransformation.None
@@ -111,7 +112,10 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
         Button(
-            onClick = { },
+            onClick = {
+                viewModel.iniciarSesion()
+            },
+            enabled = !viewModel.iniciandoSesion,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(54.dp),
@@ -121,9 +125,22 @@ fun LoginScreen(
             shape = RoundedCornerShape(12.dp)
         ) {
             Text(
-                text = "Ingresar",
+                text = if (viewModel.iniciandoSesion) {
+                    "Ingresando..."
+                } else {
+                    "Ingresar"
+                },
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold
+            )
+        }
+
+        viewModel.errorLogin?.let { error ->
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = error,
+                color = Color.Red
             )
         }
 
