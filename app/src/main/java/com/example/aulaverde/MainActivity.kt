@@ -18,6 +18,7 @@ import com.example.aulaverde.ui.*
 import com.example.aulaverde.ui.theme.AulaVerdeTheme
 import com.example.aulaverde.viewmodel.AuthViewModel
 
+
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -117,31 +118,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                 )
 
-                                "documentos" -> {
-                                    Column(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .background(
-                                                Color(0xFFE8F1EA)
-                                            )
-                                            .padding(24.dp),
-                                        horizontalAlignment =
-                                            Alignment.CenterHorizontally,
-                                        verticalArrangement =
-                                            Arrangement.Center
-                                    ) {
-                                        Text("Gestor de documentos")
-
-                                        Spacer(
-                                            modifier =
-                                                Modifier.height(16.dp)
-                                        )
-
-                                        Text(
-                                            "Esta herramienta estará disponible próximamente"
-                                        )
-                                    }
-                                }
+                                "documentos" -> DocumentManagementScreen()
 
                                 "perfil" -> PerfilScreen(
                                     profesor = profesor,
